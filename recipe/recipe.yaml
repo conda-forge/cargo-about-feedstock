@@ -20,9 +20,14 @@ build:
       # ring, zstd) using inline PLT call sequences. rustc links with its bundled rust-lld,
       # which rejects those relocations (R_PPC64_PLT16_HA/_LO_DS, R_PPC64_PLTSEQ,
       # R_PPC64_PLTCALL), so link with GNU ld on that platform instead.
+      #
+      # This has to go through RUSTFLAGS: the upstream .cargo/config.toml sets
+      # `[target.'cfg(all())'] rustflags`, which replaces `build.rustflags` and therefore
+      # makes cargo ignore the CARGO_BUILD_RUSTFLAGS set by the rust activation script.
+      # Carry those flags over so the usual rpaths are kept.
       - if: target_platform == 'linux-ppc64le'
         then:
-          - export CARGO_BUILD_RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS} -C link-arg=-fuse-ld=bfd"
+          - export RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS} -C link-arg=-fuse-ld=bfd"
       - if: unix
         then:
           - cargo auditable install --locked --no-track --bins --features cli --root ${{ PREFIX }} --path .
