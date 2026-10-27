@@ -28,6 +28,14 @@ build:
       - if: target_platform == 'linux-ppc64le'
         then:
           - export RUSTFLAGS="${CARGO_BUILD_RUSTFLAGS} -C link-arg=-fuse-ld=bfd"
+      # When cross-compiling, cc-rs combines the generic CFLAGS with the target-scoped
+      # CFLAGS_<triple> even for build-machine code (e.g. psm's build script), so the
+      # target's -mcpu/-mabi flags leak into the x86_64 compiler. Scope them to the target.
+      - if: build_platform != target_platform
+        then:
+          - export "CFLAGS_${CARGO_BUILD_TARGET//-/_}=${CFLAGS}"
+          - export "CXXFLAGS_${CARGO_BUILD_TARGET//-/_}=${CXXFLAGS}"
+          - unset CFLAGS CXXFLAGS
       - if: unix
         then:
           - cargo auditable install --locked --no-track --bins --features cli --root ${{ PREFIX }} --path .
